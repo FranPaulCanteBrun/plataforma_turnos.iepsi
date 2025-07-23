@@ -6,6 +6,9 @@ dotenv.config();
 // Import rutas
 import usuarioRoutes from "./routes/usuarios.routes";
 import authRoutes from "./routes/auth.routes";
+import turnosRoutes from "./routes/turnos.routes";
+import pagoRoutes from "./routes/pagos.routes";
+import agendaRoutes from "./routes/agenda.routes";
 
 import { AppDataSource } from "./database/data-source";
 
@@ -18,6 +21,9 @@ app.use(express.json());
 // Registro de rutas
 app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/login", authRoutes);
+app.use("/api/turnos", turnosRoutes);
+app.use("/api/pagos", pagoRoutes);
+app.use("/api/agenda", agendaRoutes);
 
 AppDataSource.initialize()
   .then(() => {

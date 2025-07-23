@@ -17,6 +17,9 @@ export const listarUsuarios = async (req: Request, res: Response) => {
 export const crearUsuario = async (req: Request, res: Response) => {
   try {
     const repo = AppDataSource.getRepository(Usuario);
+    if (!req.body.password) {
+      return res.status(400).json({ mensaje: "La contraseña es obligatoria" });
+    }
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
     const nuevoUsuario = repo.create({ ...req.body, password: hashedPassword });
     const resultado = await repo.save(nuevoUsuario);

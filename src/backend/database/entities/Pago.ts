@@ -16,7 +16,7 @@ export class Pago {
   monto!: number;
 
   @Column({ length: 30 })
-  metodo!: string;
+  metodo!: string; // efectivo, transferencia, QR
 
   @Column({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
   fecha!: Date;

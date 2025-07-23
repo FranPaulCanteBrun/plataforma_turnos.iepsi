@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { verificarJWT } from "../middlewares/auth.middleware";
-import { verificarRol } from "../middlewares/rol.meddleware";
+import { verificarRol } from "../middlewares/rol.middleware";
 import {
   borrarUsuario,
   crearUsuario,
