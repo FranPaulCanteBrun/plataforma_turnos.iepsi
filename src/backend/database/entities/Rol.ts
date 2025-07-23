@@ -10,5 +10,5 @@ export class Rol {
   nombre!: string;
 
   @OneToMany(() => Usuario, (usuario) => usuario.rol)
-  usuarios!: Usuario[];
+  usuarios!: Usuario[]; // 1 = paciente | 2 = profesional | 3 = administrativo
 }
