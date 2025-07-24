@@ -1,0 +1,81 @@
+---
+import '../styles/main.scss'
+---
+
+<html lang="es">
+  <head>
+    <title>Login</title>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <h1>Iniciar Sesión</h1>
+    <form id="login-form">
+      <label>
+        Email:
+        <input type="email" name="email" required />
+      </label>
+      <br />
+      <label>
+        Contraseña:
+        <input type="password" name="password" required />
+      </label>
+      <br />
+      <button type="submit">Ingresar</button>
+    </form>
+
+    <div id="mensaje"></div>
+
+    <script type="module">
+  const form = document.getElementById("login-form");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const email = form.email.value;
+    const password = form.password.value;
+
+    try {
+      const res = await fetch("http://localhost:3001/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        console.log("Usuario autenticado:", data);
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("rol", data.usuario.rol.nombre);
+        localStorage.setItem("nombre", data.usuario.nombre);
+
+
+        alert("¡Inicio de sesión exitoso!");
+
+        // Redirigimos según el rol:
+        const rol = data.usuario.rol.nombre.toLowerCase();
+
+        if (rol === "administrativo") {
+          window.location.href = "/admin";
+        } else if (rol === "profesional") {
+          window.location.href = "/agenda";
+        } else if (rol === "paciente") {
+          window.location.href = "/paciente";
+        } else {
+          window.location.href = "/dashboard";
+        }
+
+      } else {
+        alert(data.mensaje || "Credenciales invalidas");
+      }
+    } catch (err) {
+      console.error("Error de red:", err);
+      alert("Error al conectarse con el servidor");
+    }
+  });
+</script>
+
+  </body>
+</html>

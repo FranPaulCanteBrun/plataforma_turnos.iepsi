@@ -1,0 +1,34 @@
+---
+// src/pages/admin.astro
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Panel Administrativo</title>
+  </head>
+  <body>
+    <h1>Panel Administrativo</h1>
+    <a href="/admin-turnos"><button>Ver todos los turnos</button></a>
+    <a href="/crear-turno"><button>Crear nuevo turno</button></a>
+
+    <p id="saludo">Cargando...</p>
+
+
+    <button id="logout-btn">Cerrar sesión</button>
+
+    <script type="module">
+      const nombreUsuario = localStorage.getItem("nombre") || "Usuario";
+      const rol = localStorage.getItem("rol") || "sin rol";
+
+      const saludo = document.getElementById("saludo");
+      saludo.textContent = `¡Bienvenido, ${nombreUsuario}! Tu rol es: ${rol}`;
+
+      const logoutBtn = document.getElementById("logout-btn");
+      logoutBtn.addEventListener("click", () => {
+        localStorage.clear();
+        window.location.href = "/login";
+      });
+    </script>
+  </body>
+</html>

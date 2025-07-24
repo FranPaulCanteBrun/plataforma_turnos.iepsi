@@ -1,0 +1,120 @@
+---
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mis Turnos</title>
+  </head>
+  <body>
+    <h1>Mis Turnos como Paciente</h1>
+    <p id="saludo"></p>
+
+    <table border="1">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Profesional</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-turnos"></tbody>
+    </table>
+
+    <a href="/paciente"><button>Volver</button></a>
+
+    <script type="module">
+      const token = localStorage.getItem("token");
+      const rol = localStorage.getItem("rol");
+      const nombre = localStorage.getItem("nombre");
+
+      if (rol !== "paciente") {
+        alert("Acceso no autorizado");
+        window.location.href = "/login";
+      }
+
+      document.getElementById("saludo").textContent = `Hola ${nombre}, estos son tus turnos`;
+
+      async function cancelarTurno(id) {
+        if (!confirm("¿Querés cancelar este turno?")) return;
+
+        try {
+          const res = await fetch(`http://localhost:3001/api/turnos/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          const data = await res.json();
+          alert(data.mensaje || "Turno cancelado");
+          location.reload();
+        } catch (error) {
+          console.error("Error al cancelar turno:", error);
+          alert("Error al cancelar turno");
+        }
+      }
+
+      async function editarTurno(id) {
+        const nuevaFecha = prompt("Nueva fecha y hora (formato: YYYY-MM-DDTHH:MM):");
+        if (!nuevaFecha) return;
+
+        try {
+          const res = await fetch(`http://localhost:3001/api/turnos/${id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ fecha_hora: nuevaFecha }),
+          });
+
+          const data = await res.json();
+          alert(data.mensaje || "Turno actualizado");
+          location.reload();
+        } catch (error) {
+          console.error("Error al editar turno:", error);
+          alert("Error al editar turno");
+        }
+      }
+
+      async function cargarTurnos() {
+        try {
+          const res = await fetch("http://localhost:3001/api/turnos", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+
+          const data = await res.json();
+          const tbody = document.getElementById("tabla-turnos");
+
+          data.forEach(turno => {
+            const puedeModificar = turno.estado !== "cancelado";
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${turno.id_turno}</td>
+              <td>${new Date(turno.fecha_hora).toLocaleString()}</td>
+              <td>${turno.estado}</td>
+              <td>${turno.profesional?.nombre || "-"} ${turno.profesional?.apellido || ""}</td>
+              <td>
+                ${puedeModificar
+                  ? `
+                    <button onclick="cancelarTurno(${turno.id_turno})">Cancelar</button>
+                    <button onclick="editarTurno(${turno.id_turno})">Editar</button>
+                    `
+                  : "-"}
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+        } catch (error) {
+          console.error("Error al obtener turnos:", error);
+        }
+      }
+
+      window.cancelarTurno = cancelarTurno;
+      window.editarTurno = editarTurno;
+      cargarTurnos();
+    </script>
+  </body>
+</html>

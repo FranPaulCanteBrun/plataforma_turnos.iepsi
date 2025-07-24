@@ -1,0 +1,36 @@
+---
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mis Turnos</title>
+  </head>
+  <body>
+    <h1>Mis Turnos</h1>
+
+    <p id="saludo">Cargando...</p>
+    <a href="/pedir-turno"><button>Pedir un nuevo turno</button></a>
+    <a href="/ver-mis-turnos"><button>Ver mis turnos</button></a>
+
+
+    <button id="logout-btn">Cerrar sesión</button>
+
+    <script type="module">
+      const nombre = localStorage.getItem("nombre") || "Paciente";
+      const rol = localStorage.getItem("rol");
+
+      if (rol !== "paciente") {
+        alert("Acceso no autorizado");
+        window.location.href = "/login";
+      }
+
+      document.getElementById("saludo").textContent = `Hola ${nombre}, aquí verás tus turnos.`;
+
+      document.getElementById("logout-btn").addEventListener("click", () => {
+        localStorage.clear();
+        window.location.href = "/login";
+      });
+    </script>
+  </body>
+</html>

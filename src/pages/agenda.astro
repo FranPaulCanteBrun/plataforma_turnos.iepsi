@@ -1,0 +1,33 @@
+---
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Agenda del Profesional</title>
+  </head>
+  <body>
+    <h1>Agenda del Profesional</h1>
+    <a href="/agenda-turnos"><button>Ver mis turnos</button></a>
+    <p id="saludo">Cargando...</p>
+
+    <button id="logout-btn">Cerrar sesión</button>
+
+    <script type="module">
+      const nombre = localStorage.getItem("nombre") || "Profesional";
+      const rol = localStorage.getItem("rol");
+
+      if (rol !== "profesional") {
+        alert("Acceso no autorizado");
+        window.location.href = "/login";
+      }
+
+      document.getElementById("saludo").textContent = `¡Hola, Dr/a. ${nombre}!`;
+
+      document.getElementById("logout-btn").addEventListener("click", () => {
+        localStorage.clear();
+        window.location.href = "/login";
+      });
+    </script>
+  </body>
+</html>

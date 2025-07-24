@@ -1,0 +1,89 @@
+---
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Crear Turno</title>
+  </head>
+  <body>
+    <h1>Crear Turno</h1>
+    <form id="form-turno">
+      <label for="fecha">Fecha y hora:</label>
+      <input type="datetime-local" id="fecha" name="fecha" required /><br />
+
+      <label for="paciente">ID del Paciente:</label>
+      <input type="number" id="paciente" name="paciente" required /><br />
+
+      <label for="profesional">ID del Profesional:</label>
+      <input type="number" id="profesional" name="profesional" required /><br />
+
+      <button type="submit">Crear Turno</button>
+    </form>
+
+    <p id="mensaje"></p>
+
+    <a href="/admin"><button>Volver al panel</button></a>
+
+    <script type="module">
+    const token = localStorage.getItem("token");
+    const rol = localStorage.getItem("rol");
+    const id_usuario = localStorage.getItem("id_usuario");
+
+  if (!token || !rol) {
+    alert("Debes iniciar sesión");
+    window.location.href = "/login";
+  }
+
+  const form = document.getElementById("form-turno");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const fecha = document.getElementById("fecha").value;
+    const profesional = document.getElementById("profesional").value;
+
+    if (!fecha || !profesional) {
+      alert("Debés completar todos los campos.");
+      return;
+    }
+
+    const payload = {
+      fecha_hora: fecha,
+      profesional_id: profesional,
+    };
+
+    // Solo pacientes envían su propio ID
+    if (rol === "paciente") {
+      payload.paciente_id = id_usuario;
+    } else {
+      const paciente = document.getElementById("paciente").value;
+      if (!paciente) {
+        alert("Debés seleccionar un paciente");
+        return;
+      }
+      payload.paciente_id = paciente;
+    }
+
+    try {
+      const res = await fetch("http://localhost:3001/api/turnos", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      alert(data.mensaje || "Turno creado");
+      form.reset();
+    } catch (error) {
+      console.error("Error al crear turno:", error);
+      alert("Error al crear turno");
+    }
+  });
+</script>
+
+  </body>
+</html>

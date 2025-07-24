@@ -93,3 +93,16 @@ export const actualizarUsuario = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const listarProfesionales = async (_req: Request, res: Response) => {
+  try {
+    const repo = AppDataSource.getRepository(Usuario);
+    const profesionales = await repo.find({
+      where: { rol: { id: 2 }, activo: true },
+    });
+    res.json(profesionales);
+  } catch (error) {
+    console.error("Error al listar profesionales:", error);
+    res.status(500).json({ mensaje: "Error al obtener profesionales" });
+  }
+};

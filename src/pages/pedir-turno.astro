@@ -1,0 +1,104 @@
+---
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Pedir Turno</title>
+  </head>
+  <body>
+    <h1>Pedir un nuevo turno</h1>
+
+    <form id="form-turno">
+      <label for="profesional">Profesional:</label>
+      <select id="profesional" name="profesional" required>
+        <option value="">Cargando profesionales...</option>
+      </select><br />
+
+      <label for="fecha">Fecha y hora:</label>
+      <input type="datetime-local" id="fecha" name="fecha" required /><br />
+
+      <button type="submit">Solicitar turno</button>
+    </form>
+
+    <p id="mensaje"></p>
+
+    <a href="/paciente"><button>Volver</button></a>
+
+    <script type="module">
+      const token = localStorage.getItem("token");
+      const rol = localStorage.getItem("rol");
+      const id_usuario = localStorage.getItem("id_usuario");
+      const nombre = localStorage.getItem("nombre");
+
+      if (!token || rol !== "paciente") {
+        alert("Acceso no autorizado");
+        window.location.href = "/login";
+      }
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        const profesionalSelect = document.getElementById("profesional");
+
+        try {
+          const res = await fetch("http://localhost:3001/api/usuarios/profesionales", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const profesionales = await res.json();
+
+          profesionalSelect.innerHTML = '<option value="">Seleccioná un profesional</option>';
+
+          profesionales.forEach((prof) => {
+            const option = document.createElement("option");
+            option.value = prof.id_usuario;
+            option.textContent = `${prof.nombre} ${prof.apellido}`;
+            profesionalSelect.appendChild(option);
+          });
+
+        } catch (error) {
+          console.error("Error al cargar profesionales:", error);
+          alert("No se pudieron cargar los profesionales.");
+        }
+      });
+
+      const form = document.getElementById("form-turno");
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const fecha = document.getElementById("fecha").value;
+        const profesional = document.getElementById("profesional").value;
+
+        if (!fecha || !profesional) {
+          alert("Debés completar todos los campos.");
+          return;
+        }
+
+        const payload = {
+          fecha_hora: fecha,
+          profesional_id: profesional,
+          paciente_id: id_usuario,
+        };
+
+        try {
+          const res = await fetch("http://localhost:3001/api/turnos/paciente", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await res.json();
+          alert(data.mensaje || "Turno solicitado");
+          form.reset();
+        } catch (error) {
+          console.error("Error al solicitar turno:", error);
+          alert("Error al solicitar turno");
+        }
+      });
+    </script>
+  </body>
+</html>

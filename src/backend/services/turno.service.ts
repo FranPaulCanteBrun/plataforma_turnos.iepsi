@@ -1,6 +1,7 @@
 import { AppDataSource } from "../database/data-source";
 import { Turno } from "../database/entities/Turno";
 import { Usuario } from "../database/entities/Usuario";
+import { logNotificacion } from "./notificacion.service";
 
 export const crearTurno = async (
   fecha_hora: Date,
@@ -26,7 +27,17 @@ export const crearTurno = async (
     estado: "pendiente",
   });
 
-  return await turnoRepo.save(nuevoTurno);
+  const turnoGuardado = await turnoRepo.save(nuevoTurno);
+
+  await logNotificacion(
+    "turno_confirmado",
+    `Hola ${paciente.nombre}, tu turno con ${profesional.nombre} ${
+      profesional.apellido
+    } fue confirmado para el ${fecha_hora.toLocaleString()}.`,
+    paciente
+  );
+
+  return turnoGuardado;
 };
 
 export const listarTurnosPorRol = async (usuario: any): Promise<Turno[]> => {
@@ -91,7 +102,7 @@ export const cancelarTurno = async (
   const repo = AppDataSource.getRepository(Turno);
   const turno = await repo.findOne({
     where: { id_turno },
-    relations: ["paciente"],
+    relations: ["paciente", "profesional"],
   });
 
   if (!turno) throw new Error("Turno no encontrado");
@@ -104,5 +115,37 @@ export const cancelarTurno = async (
   }
 
   turno.estado = "cancelado";
-  return await repo.save(turno);
+  const turnoCancelado = await repo.save(turno);
+
+  // Enviar notificación al paciente
+  await logNotificacion(
+    "turno_cancelado",
+    `Hola ${turno.paciente.nombre}, tu turno con ${turno.profesional.nombre} ${
+      turno.profesional.apellido
+    } del ${turno.fecha_hora.toLocaleString()} ha sido cancelado.`,
+    turno.paciente
+  );
+
+  return turnoCancelado;
+};
+
+export const crearTurnoComoPaciente = async (
+  fecha_hora: Date,
+  paciente_id: number,
+  profesional_id: number
+) => {
+  const repo = AppDataSource.getRepository(Turno);
+
+  if (!fecha_hora || !profesional_id) {
+    throw new Error("Faltan datos obligatorios");
+  }
+
+  const nuevoTurno = repo.create({
+    fecha_hora,
+    estado: "pendiente",
+    paciente: { id_usuario: paciente_id },
+    profesional: { id_usuario: profesional_id },
+  });
+
+  return await repo.save(nuevoTurno);
 };

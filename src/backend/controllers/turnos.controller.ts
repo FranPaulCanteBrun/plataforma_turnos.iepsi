@@ -4,6 +4,7 @@ import {
   listarTurnosPorRol,
   cancelarTurno,
   reprogramarTurno,
+  crearTurnoComoPaciente,
 } from "../services/turno.service";
 
 export const postTurno = async (req: Request, res: Response) => {
@@ -64,6 +65,23 @@ export const deleteTurno = async (req: Request, res: Response) => {
       .json({ mensaje: "Turno cancelado", turno: cancelado });
   } catch (error: any) {
     console.error("Error al cancelar:", error);
+    return res.status(400).json({ mensaje: error.message });
+  }
+};
+
+export const postTurnoPaciente = async (req: Request, res: Response) => {
+  const usuario = (req as any).usuario;
+  const { fecha_hora, profesional_id } = req.body;
+
+  try {
+    const turno = await crearTurnoComoPaciente(
+      new Date(fecha_hora),
+      usuario.id_usuario,
+      profesional_id
+    );
+    return res.status(201).json({ mensaje: "Turno solicitado", turno });
+  } catch (error: any) {
+    console.error("Error al crear turno como paciente:", error);
     return res.status(400).json({ mensaje: error.message });
   }
 };

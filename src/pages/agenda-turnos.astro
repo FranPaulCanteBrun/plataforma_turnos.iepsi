@@ -1,0 +1,66 @@
+---
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Agenda del Profesional</title>
+  </head>
+  <body>
+    <h1>Mis Turnos como Profesional</h1>
+    <p id="saludo"></p>
+
+    <table border="1">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Paciente</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-turnos"></tbody>
+    </table>
+
+    <a href="/agenda"><button>Volver</button></a>
+
+    <script type="module">
+      const token = localStorage.getItem("token");
+      const rol = localStorage.getItem("rol");
+      const nombre = localStorage.getItem("nombre");
+
+      if (rol !== "profesional") {
+        alert("Acceso no autorizado");
+        window.location.href = "/login";
+      }
+
+      document.getElementById("saludo").textContent = `Hola Dr/a ${nombre}, esta es tu agenda`;
+
+      async function cargarTurnos() {
+        try {
+          const res = await fetch("http://localhost:3001/api/turnos", {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+
+          const data = await res.json();
+          const tbody = document.getElementById("tabla-turnos");
+
+          data.forEach(turno => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${turno.id_turno}</td>
+              <td>${new Date(turno.fecha_hora).toLocaleString()}</td>
+              <td>${turno.estado}</td>
+              <td>${turno.paciente?.nombre || "-"} ${turno.paciente?.apellido || ""}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        } catch (error) {
+          console.error("Error al obtener turnos:", error);
+        }
+      }
+
+      cargarTurnos();
+    </script>
+  </body>
+</html>

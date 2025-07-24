@@ -6,6 +6,7 @@ import {
   crearUsuario,
   listarUsuarios,
   actualizarUsuario,
+  listarProfesionales,
 } from "../controllers/usuarios.controller";
 
 const router = Router();
@@ -28,5 +29,7 @@ router.delete(
   verificarRol("administrativo"),
   borrarUsuario
 );
+
+router.get("/profesionales", verificarJWT, listarProfesionales);
 
 export default router;

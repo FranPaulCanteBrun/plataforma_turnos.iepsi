@@ -6,6 +6,7 @@ import {
   postTurno,
   putTurno,
   deleteTurno,
+  postTurnoPaciente,
 } from "../controllers/turnos.controller";
 
 const router = Router();
@@ -18,5 +19,12 @@ router.get("/", verificarJWT, getTurnos); // depende el rol es la obtencion de t
 router.put("/:id", verificarJWT, putTurno); // paciente o admin
 
 router.delete("/:id", verificarJWT, deleteTurno); // paciente o admin
+
+router.post(
+  "/paciente",
+  verificarJWT,
+  verificarRol("paciente"),
+  postTurnoPaciente
+);
 
 export default router;
