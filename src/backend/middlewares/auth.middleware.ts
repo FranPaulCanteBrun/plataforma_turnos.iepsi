@@ -1,33 +1,36 @@
-import jwt from "jsonwebtoken";
+
 import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
 
-const CLAVE_SECRETA = "tu_clave_secreta";
+const JWT_SECRET = process.env.JWT_SECRET || "secreto"; // Asegúrate de usar un valor seguro en producción
 
-export const verificarJWT = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const authHeader = req.headers.authorization;
+interface DecodedToken {
+  id_usuario: number;
+  rol: string;
+}
 
-  if (!authHeader) {
-    return res
-      .status(401)
-      .json({ mensaje: "Acceso denegado: token no proporcionado" });
+export const verificarJWT = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ mensaje: "Token no proporcionado" });
   }
 
-  const token = authHeader.split(" ")[1];
-
   try {
-    const decoded = jwt.verify(token, CLAVE_SECRETA) as {
-      id_usuario: number;
-      rol: string;
+    const decoded = jwt.verify(token, JWT_SECRET) as DecodedToken;
+
+    const rolesPorNombre: Record<string, number> = {
+      paciente: 1,
+      profesional: 2,
+      administrativo: 3,
     };
 
-    // Asignamos el usuario con rol en texto plano
     (req as any).usuario = {
+      id: decoded.id_usuario,
       id_usuario: decoded.id_usuario,
-      rol: decoded.rol, // esto es un string como "paciente"
+      rol: decoded.rol,
+      rol_id: rolesPorNombre[decoded.rol],
     };
 
     next();
