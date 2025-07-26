@@ -5,6 +5,7 @@ import {
   postPago,
   getPagos,
   getReportePagos,
+  getResumenCaja,
 } from "../controllers/pagos.controller";
 
 const router = Router();
@@ -15,5 +16,7 @@ router.use(verificarJWT, verificarRol("administrativo"));
 router.post("/", postPago); // Registrar pago
 router.get("/", getPagos); // Listar todos
 router.get("/reporte", getReportePagos); // Reporte por rango de fechas
+
+router.get("/caja", getResumenCaja);
 
 export default router;

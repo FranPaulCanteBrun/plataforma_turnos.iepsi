@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { AppDataSource } from "../database/data-source";
 import { Usuario } from "../database/entities/Usuario";
+import { Rol } from "../database/entities/Rol";
 import bcrypt from "bcrypt";
 
 export const listarUsuarios = async (req: Request, res: Response) => {
@@ -104,5 +105,49 @@ export const listarProfesionales = async (_req: Request, res: Response) => {
   } catch (error) {
     console.error("Error al listar profesionales:", error);
     res.status(500).json({ mensaje: "Error al obtener profesionales" });
+  }
+};
+
+export const registroPaciente = async (req: Request, res: Response) => {
+  try {
+    const repoUsuario = AppDataSource.getRepository(Usuario);
+    const repoRol = AppDataSource.getRepository(Rol);
+
+    const { nombre, apellido, email, password, dni } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ mensaje: "La contraseña es obligatoria" });
+    }
+
+    // Verificar si ya existe el email
+    const existente = await repoUsuario.findOne({ where: { email } });
+    if (existente) {
+      return res.status(400).json({ mensaje: "El email ya está en uso" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const rolPaciente = await repoRol.findOne({
+      where: { nombre: "paciente" },
+    });
+    if (!rolPaciente) throw new Error("Rol 'paciente' no existe en DB");
+
+    const nuevo = repoUsuario.create({
+      nombre,
+      apellido,
+      email,
+      dni,
+      password: hashedPassword,
+      rol: rolPaciente,
+      activo: true,
+    });
+
+    const guardado = await repoUsuario.save(nuevo);
+
+    return res
+      .status(201)
+      .json({ mensaje: "Usuario paciente registrado", usuario: guardado });
+  } catch (error) {
+    console.error("Error al registrar paciente:", error);
+    res.status(500).json({ mensaje: "Error en el registro" });
   }
 };

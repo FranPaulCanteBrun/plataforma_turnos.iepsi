@@ -7,6 +7,7 @@ import {
   listarUsuarios,
   actualizarUsuario,
   listarProfesionales,
+  registroPaciente,
 } from "../controllers/usuarios.controller";
 
 const router = Router();
@@ -31,5 +32,7 @@ router.delete(
 );
 
 router.get("/profesionales", verificarJWT, listarProfesionales);
+
+router.post("/registro", registroPaciente); // acceso público
 
 export default router;

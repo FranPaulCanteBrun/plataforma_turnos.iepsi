@@ -1,0 +1,110 @@
+---
+--- 
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Reporte de Pagos</title>
+  </head>
+  <body>
+    <h1>Reporte de Pagos</h1>
+
+    <label for="desde">Desde:</label>
+    <input type="date" id="desde" />
+
+    <label for="hasta">Hasta:</label>
+    <input type="date" id="hasta" />
+
+    <button id="generar-reporte">Generar Reporte</button>
+    <button id="descargar-csv">Descargar CSV</button>
+
+    <table border="1" id="tabla-reporte" style="margin-top: 20px;">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Método</th>
+          <th>Monto</th>
+          <th>Paciente</th>
+          <th>Profesional</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <a href="/admin"><button>Volver</button></a>
+
+    <script type="module">
+      const token = localStorage.getItem("token");
+
+      const btnGenerar = document.getElementById("generar-reporte");
+      const btnDescargar = document.getElementById("descargar-csv");
+
+      btnGenerar.addEventListener("click", async () => {
+        const desde = document.getElementById("desde").value;
+        const hasta = document.getElementById("hasta").value;
+
+        if (!desde || !hasta) {
+          alert("Seleccioná ambas fechas");
+          return;
+        }
+
+        try {
+          const res = await fetch(`http://localhost:3001/api/pagos/reporte?desde=${desde}&hasta=${hasta}`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+
+          const data = await res.json();
+          const tbody = document.querySelector("#tabla-reporte tbody");
+          tbody.innerHTML = "";
+
+          data.forEach(pago => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${new Date(pago.fecha).toLocaleString()}</td>
+              <td>${pago.metodo}</td>
+              <td>${parseFloat(pago.monto).toFixed(2)}</td>
+              <td>${pago.turno.paciente?.nombre || ''} ${pago.turno.paciente?.apellido || ''}</td>
+              <td>${pago.turno.profesional?.nombre || ''} ${pago.turno.profesional?.apellido || ''}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+
+          // Guardamos temporalmente para CSV
+          window.reportePagos = data;
+
+        } catch (error) {
+          console.error("Error al cargar pagos:", error);
+          alert("Hubo un error al obtener los pagos");
+        }
+      });
+
+      btnDescargar.addEventListener("click", () => {
+        const data = window.reportePagos;
+        if (!data || data.length === 0) {
+          alert("No hay datos para descargar");
+          return;
+        }
+
+        const encabezado = "Fecha,Método,Monto,Paciente,Profesional\n";
+        const filas = data.map(pago => {
+          const fecha = new Date(pago.fecha).toLocaleString();
+          const metodo = pago.metodo;
+          const monto = parseFloat(pago.monto).toFixed(2);
+          const paciente = `${pago.turno.paciente?.nombre || ''} ${pago.turno.paciente?.apellido || ''}`;
+          const profesional = `${pago.turno.profesional?.nombre || ''} ${pago.turno.profesional?.apellido || ''}`;
+          return `"${fecha}","${metodo}",${monto},"${paciente}","${profesional}"`;
+        });
+
+        const contenidoCSV = encabezado + filas.join("\n");
+        const blob = new Blob([contenidoCSV], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "reporte_pagos.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    </script>
+  </body>
+</html>

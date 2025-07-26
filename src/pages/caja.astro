@@ -1,0 +1,49 @@
+---
+---
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Resumen de Caja</title>
+  </head>
+  <body>
+    <h1>Resumen de Caja</h1>
+    <div id="resumen">
+      <p><strong>Ingresos del día:</strong> <span id="dia">Cargando...</span></p>
+      <p><strong>Ingresos de la semana:</strong> <span id="semana">Cargando...</span></p>
+      <p><strong>Ingresos del mes:</strong> <span id="mes">Cargando...</span></p>
+    </div>
+
+    <a href="/admin"><button>Volver</button></a>
+
+    <script type="module">
+      const token = localStorage.getItem("token");
+      const rol = localStorage.getItem("rol");
+
+      if (!token || rol !== "administrativo") {
+        alert("Acceso no autorizado");
+        window.location.href = "/login";
+      }
+
+      const diaSpan = document.getElementById("dia");
+      const semanaSpan = document.getElementById("semana");
+      const mesSpan = document.getElementById("mes");
+
+      try {
+        fetch("http://localhost:3001/api/pagos/caja", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            diaSpan.textContent = `$${data.dia.toFixed(2)}`;
+            semanaSpan.textContent = `$${data.semana.toFixed(2)}`;
+            mesSpan.textContent = `$${data.mes.toFixed(2)}`;
+          });
+      } catch (err) {
+        alert("Error al cargar la caja");
+        console.error(err);
+      }
+    </script>
+  </body>
+</html>

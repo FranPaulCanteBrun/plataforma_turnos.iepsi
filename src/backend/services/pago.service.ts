@@ -45,3 +45,43 @@ export const reportePagos = async (desde: Date, hasta: Date) => {
     .orderBy("pago.fecha", "ASC")
     .getMany();
 };
+
+export const resumenCaja = async () => {
+  const pagoRepo = AppDataSource.getRepository(Pago);
+
+  const hoy = new Date();
+  const inicioDia = new Date(hoy);
+  inicioDia.setHours(0, 0, 0, 0);
+
+  const inicioSemana = new Date(hoy);
+  inicioSemana.setDate(hoy.getDate() - 6);
+  inicioSemana.setHours(0, 0, 0, 0);
+
+  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+
+  const [dia, semana, mes] = await Promise.all([
+    pagoRepo
+      .createQueryBuilder("pago")
+      .select("SUM(pago.monto)", "total")
+      .where("pago.fecha >= :inicio", { inicio: inicioDia })
+      .getRawOne(),
+
+    pagoRepo
+      .createQueryBuilder("pago")
+      .select("SUM(pago.monto)", "total")
+      .where("pago.fecha >= :inicio", { inicio: inicioSemana })
+      .getRawOne(),
+
+    pagoRepo
+      .createQueryBuilder("pago")
+      .select("SUM(pago.monto)", "total")
+      .where("pago.fecha >= :inicio", { inicio: inicioMes })
+      .getRawOne(),
+  ]);
+
+  return {
+    dia: Number(dia.total || 0),
+    semana: Number(semana.total || 0),
+    mes: Number(mes.total || 0),
+  };
+};

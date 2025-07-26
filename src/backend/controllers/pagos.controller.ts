@@ -3,6 +3,7 @@ import {
   registrarPago,
   listarPagos,
   reportePagos,
+  resumenCaja,
 } from "../services/pago.service";
 
 export const postPago = async (req: Request, res: Response) => {
@@ -29,6 +30,15 @@ export const getReportePagos = async (req: Request, res: Response) => {
       new Date(hasta as string)
     );
     return res.status(200).json(pagos);
+  } catch (error: any) {
+    return res.status(400).json({ mensaje: error.message });
+  }
+};
+
+export const getResumenCaja = async (_req: Request, res: Response) => {
+  try {
+    const resumen = await resumenCaja();
+    return res.status(200).json(resumen);
   } catch (error: any) {
     return res.status(400).json({ mensaje: error.message });
   }

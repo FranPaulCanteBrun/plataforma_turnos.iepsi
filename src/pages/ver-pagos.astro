@@ -1,0 +1,81 @@
+---
+
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ver Pagos</title>
+  </head>
+  <body>
+    <h1>Pagos Registrados</h1>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Monto</th>
+          <th>Método</th>
+          <th>Paciente</th>
+          <th>Profesional</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-pagos">
+        <tr><td colspan="5">Cargando pagos...</td></tr>
+      </tbody>
+    </table>
+
+    <a href="/registrar-pago"><button>Registrar nuevo pago</button></a>
+    <a href="/admin"><button>Volver</button></a>
+
+    <script type="module">
+      const token = localStorage.getItem("token");
+      const rol = localStorage.getItem("rol");
+
+      if (!token || rol !== "administrativo") {
+        alert("Acceso denegado");
+        window.location.href = "/login";
+      }
+
+      const tabla = document.getElementById("tabla-pagos");
+
+      async function cargarPagos() {
+        try {
+          const res = await fetch("http://localhost:3001/api/pagos", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const pagos = await res.json();
+          if (!Array.isArray(pagos)) throw new Error("Respuesta inválida");
+
+          if (pagos.length === 0) {
+            tabla.innerHTML = '<tr><td colspan="5">No hay pagos registrados</td></tr>';
+            return;
+          }
+
+          tabla.innerHTML = "";
+
+          pagos.forEach((pago) => {
+            const fila = document.createElement("tr");
+            fila.innerHTML = `
+                <td>${new Date(pago.fecha).toLocaleString()}</td>
+                <td>$${Number(pago.monto).toFixed(2)}</td>
+                <td>${pago.metodo}</td>
+                <td>${pago.turno?.paciente?.nombre || "?"} ${pago.turno?.paciente?.apellido || ""}</td>
+                <td>${pago.turno?.profesional?.nombre || "?"} ${pago.turno?.profesional?.apellido || ""}</td>
+            `;
+
+            tabla.appendChild(fila);
+          });
+
+        } catch (error) {
+          console.error("Error al cargar pagos:", error);
+          tabla.innerHTML = '<tr><td colspan="5">Error al cargar los pagos</td></tr>';
+        }
+      }
+
+      cargarPagos();
+    </script>
+  </body>
+</html>

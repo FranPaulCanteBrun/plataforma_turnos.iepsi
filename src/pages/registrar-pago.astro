@@ -1,0 +1,106 @@
+---
+---
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Registrar Pago</title>
+  </head>
+  <body>
+    <h1>Registrar Pago</h1>
+
+    <form id="form-pago">
+      <label for="turno">Seleccioná un turno:</label>
+      <select id="turno" name="turno" required>
+        <option value="">Cargando turnos...</option>
+      </select><br />
+
+      <label for="monto">Monto:</label>
+      <input type="number" id="monto" name="monto" step="0.01" required /><br />
+
+      <label for="metodo">Método de pago:</label>
+      <select id="metodo" name="metodo" required>
+        <option value="">Seleccioná un método</option>
+        <option value="efectivo">Efectivo</option>
+        <option value="transferencia">Transferencia</option>
+        <option value="tarjeta">Tarjeta</option>
+      </select><br />
+
+      <button type="submit">Registrar Pago</button>
+    </form>
+
+    <p id="mensaje"></p>
+
+    <a href="/admin"><button>Volver</button></a>
+
+    <script type="module">
+      const token = localStorage.getItem("token");
+      const rol = localStorage.getItem("rol");
+
+      if (!token || rol !== "administrativo") {
+        alert("Acceso no autorizado");
+        window.location.href = "/login";
+      }
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        const turnoSelect = document.getElementById("turno");
+
+        try {
+          const res = await fetch("http://localhost:3001/api/turnos", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          const turnos = await res.json();
+          turnoSelect.innerHTML = '<option value="">Seleccioná un turno</option>';
+
+          turnos
+            .filter(t => t.estado !== "cancelado" && t.estado !== "pagado")
+            .forEach(turno => {
+              const opt = document.createElement("option");
+              const fecha = new Date(turno.fecha_hora).toLocaleString();
+              opt.value = turno.id_turno;
+              opt.textContent = `Turno #${turno.id_turno} - ${fecha} - Paciente: ${turno.paciente.nombre} ${turno.paciente.apellido}`;
+              turnoSelect.appendChild(opt);
+            });
+        } catch (error) {
+          console.error("Error al cargar turnos:", error);
+          alert("No se pudieron cargar los turnos.");
+        }
+      });
+
+      document.getElementById("form-pago").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const turno_id = document.getElementById("turno").value;
+        const monto = document.getElementById("monto").value;
+        const metodo = document.getElementById("metodo").value;
+
+        if (!turno_id || !monto || !metodo) {
+          alert("Debés completar todos los campos.");
+          return;
+        }
+
+        try {
+          const res = await fetch("http://localhost:3001/api/pagos", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              turno_id: parseInt(turno_id),
+              monto: parseFloat(monto),
+              metodo,
+            }),
+          });
+
+          const data = await res.json();
+          alert(data.mensaje || "Pago registrado");
+          document.getElementById("form-pago").reset();
+        } catch (error) {
+          console.error("Error al registrar pago:", error);
+          alert("Error al registrar pago");
+        }
+      });
+    </script>
+  </body>
+</html>
