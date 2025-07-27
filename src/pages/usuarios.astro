@@ -1,0 +1,114 @@
+---
+--- 
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Gestión de Usuarios</title>
+  </head>
+  <body>
+    <h1>Gestión de Usuarios</h1>
+
+    <p id="saludo"></p>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>DNI</th>
+          <th>Rol</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-usuarios"></tbody>
+    </table>
+
+    <p id="mensaje"></p>
+    <a href="/admin"><button>Volver al panel</button></a>
+
+    <script type="module">
+  const token = localStorage.getItem("token");
+  const rol = localStorage.getItem("rol");
+
+  if (rol !== "administrativo") {
+    alert("Acceso no autorizado");
+    window.location.href = "/login";
+  }
+
+  async function cargarUsuarios() {
+    const mensaje = document.getElementById("mensaje");
+    const tbody = document.getElementById("tabla-usuarios");
+
+    try {
+      const res = await fetch("http://localhost:3001/api/usuarios", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const usuarios = await res.json();
+
+      if (!Array.isArray(usuarios)) {
+        mensaje.textContent = usuarios.mensaje || "Error inesperado.";
+        return;
+      }
+
+      // Limpiar tabla por si hay recarga
+      tbody.innerHTML = "";
+
+      usuarios.forEach((usuario) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${usuario.id_usuario}</td>
+          <td>${usuario.nombre} ${usuario.apellido}</td>
+          <td>${usuario.email}</td>
+          <td>${usuario.dni}</td>
+          <td>${usuario.rol?.nombre || "-"}</td>
+          <td>
+            <button class="editar-btn" data-id="${usuario.id_usuario}">✏️</button>
+            <button class="eliminar-btn" data-id="${usuario.id_usuario}">🗑️</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Asignar eventos a los botones luego de renderizar
+      document.querySelectorAll(".editar-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-id");
+          window.location.href = `/editar-usuario?id=${id}`;
+        });
+      });
+
+      document.querySelectorAll(".eliminar-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-id");
+          if (!confirm("¿Seguro que deseas eliminar este usuario?")) return;
+
+          try {
+            const res = await fetch(`http://localhost:3001/api/usuarios/${id}`, {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${token}` },
+            });
+
+            const data = await res.json();
+            alert(data.mensaje || "Usuario eliminado");
+            location.reload();
+          } catch (error) {
+            console.error("Error al eliminar usuario:", error);
+            alert("Error al eliminar usuario");
+          }
+        });
+      });
+
+    } catch (error) {
+      console.error("Error al cargar usuarios:", error);
+      mensaje.textContent = "Error al obtener los usuarios.";
+    }
+  }
+
+  cargarUsuarios();
+</script>
+
+
+  </body>
+</html>

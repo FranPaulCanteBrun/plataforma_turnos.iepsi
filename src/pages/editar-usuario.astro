@@ -1,0 +1,114 @@
+---
+---  
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Editar Usuario</title>
+  </head>
+  <body>
+    <h1>Editar Usuario</h1>
+
+    <form id="form-editar">
+      <label for="nombre">Nombre:</label>
+      <input type="text" id="nombre" name="nombre" required /><br />
+
+      <label for="apellido">Apellido:</label>
+      <input type="text" id="apellido" name="apellido" required /><br />
+
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required /><br />
+
+      <label for="dni">DNI:</label>
+      <input type="number" id="dni" name="dni" required /><br />
+
+      <button type="submit">Guardar cambios</button>
+    </form>
+
+    <p id="mensaje"></p>
+    <a href="/usuarios"><button>Volver</button></a>
+
+    <script type="module">
+        const token = localStorage.getItem("token");
+        const rol = localStorage.getItem("rol");
+
+        if (!token || rol !== "administrativo") {
+            alert("Acceso no autorizado");
+            window.location.href = "/login";
+        }
+
+        const mensaje = document.getElementById("mensaje");
+        const form = document.getElementById("form-editar");
+        const nombreInput = document.getElementById("nombre");
+        const apellidoInput = document.getElementById("apellido");
+        const emailInput = document.getElementById("email");
+        const dniInput = document.getElementById("dni");
+
+        const queryParams = new URLSearchParams(window.location.search);
+        const id = queryParams.get("id");
+
+        async function cargarUsuario() {
+            try {
+            const res = await fetch("http://localhost:3001/api/usuarios", {
+                headers: {
+                Authorization: `Bearer ${token}`
+                }
+            });
+
+            const usuarios = await res.json();
+
+            if (!Array.isArray(usuarios)) {
+                throw new Error(usuarios.mensaje || "Error inesperado");
+            }
+
+            const usuario = usuarios.find(u => u.id_usuario == id);
+
+            if (!usuario) {
+                mensaje.textContent = "Usuario no encontrado";
+                return;
+            }
+
+            nombreInput.value = usuario.nombre;
+            apellidoInput.value = usuario.apellido;
+            emailInput.value = usuario.email;
+            dniInput.value = usuario.dni;
+
+            } catch (error) {
+            console.error("Error al cargar usuario:", error);
+            mensaje.textContent = "Error al cargar el usuario.";
+            }
+        }
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const datos = {
+            nombre: nombreInput.value,
+            apellido: apellidoInput.value,
+            email: emailInput.value,
+            dni: dniInput.value,
+            };
+
+            try {
+            const res = await fetch(`http://localhost:3001/api/usuarios/${id}`, {
+                method: "PUT",
+                headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(datos)
+            });
+
+            const data = await res.json();
+            alert(data.mensaje || "Usuario actualizado correctamente");
+            window.location.href = "/usuarios";
+            } catch (error) {
+            console.error("Error al actualizar usuario:", error);
+            alert("Error al actualizar usuario");
+            }
+        });
+
+        cargarUsuario();
+    </script>
+
+  </body>
+</html>
