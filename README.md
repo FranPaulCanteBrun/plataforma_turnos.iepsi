@@ -22,10 +22,10 @@ Plataforma web para gestionar turnos médicos, pagos y agendas de profesionales 
 
 ## Entidades y tablas creadas automáticamente (X)
 
-## Endpoints API (en progreso) ()
+## Endpoints API (en progreso) (X)
 
-## Integración frontend ()
+## Integración frontend (X)
 
-## Autenticación ()
+## Autenticación (X)
 
-## Panel administrativo ()
+## Panel administrativo (X)
