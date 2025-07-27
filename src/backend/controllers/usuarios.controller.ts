@@ -2,12 +2,13 @@ import { Request, Response } from "express";
 import { AppDataSource } from "../database/data-source";
 import { Usuario } from "../database/entities/Usuario";
 import { Rol } from "../database/entities/Rol";
+import { enviarCorreo } from "../utils/mailer";
 import bcrypt from "bcrypt";
 
 export const listarUsuarios = async (req: Request, res: Response) => {
   try {
     const repo = AppDataSource.getRepository(Usuario);
-    const usuarios = await repo.find();
+    const usuarios = await repo.find({ relations: ["rol"] });
     res.status(200).json(usuarios);
   } catch (error) {
     console.error("Error al listar usuarios: ", error);
@@ -16,18 +17,65 @@ export const listarUsuarios = async (req: Request, res: Response) => {
 };
 
 export const crearUsuario = async (req: Request, res: Response) => {
+  const { nombre, apellido, email, password, dni, rol_id } = req.body;
+
+  if (!email || !password || !dni || !rol_id) {
+    return res.status(400).json({ mensaje: "Faltan campos obligatorios" });
+  }
+
   try {
     const repo = AppDataSource.getRepository(Usuario);
-    if (!req.body.password) {
-      return res.status(400).json({ mensaje: "La contraseña es obligatoria" });
+    const repoRol = AppDataSource.getRepository(Rol);
+
+    // Verificación de duplicados
+    const existentePorEmail = await repo.findOne({ where: { email } });
+    if (existentePorEmail) {
+      return res.status(409).json({ mensaje: "El email ya está registrado" });
     }
-    const hashedPassword = await bcrypt.hash(req.body.password, 10);
-    const nuevoUsuario = repo.create({ ...req.body, password: hashedPassword });
-    const resultado = await repo.save(nuevoUsuario);
-    res.status(201).json(resultado);
+
+    const existentePorDNI = await repo.findOne({ where: { dni } });
+    if (existentePorDNI) {
+      return res.status(409).json({ mensaje: "El DNI ya está registrado" });
+    }
+
+    const rol = await repoRol.findOne({ where: { id: rol_id } });
+    if (!rol) {
+      return res.status(400).json({ mensaje: "Rol no válido" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const nuevoUsuario = repo.create({
+      nombre,
+      apellido,
+      email,
+      password: hashedPassword,
+      dni,
+      rol,
+      activo: true,
+    });
+
+    const usuarioGuardado = await repo.save(nuevoUsuario);
+
+    // Solo pacientes reciben email de bienvenida
+    if (rol.nombre === "paciente") {
+      await enviarCorreo(
+        nuevoUsuario.email,
+        "Bienvenido a la Plataforma de Turnos",
+        `Hola ${nombre} ${apellido},\n\n¡Gracias por registrarte en nuestra plataforma de turnos! Ya podés comenzar a solicitar turnos.\n\n— Equipo IEPSI`
+      );
+    }
+
+    console.log("Correo enviado...");
+
+    return res
+      .status(201)
+      .json({ mensaje: "Usuario registrado", usuario: usuarioGuardado });
   } catch (error) {
-    console.error("Error al crear usuario: ", error);
-    res.status(500).json({ mensaje: "Error al registrar usuario" });
+    console.error("Error al registrar usuario:", error);
+    return res
+      .status(500)
+      .json({ mensaje: "Error interno al registrar usuario" });
   }
 };
 
@@ -119,7 +167,6 @@ export const registroPaciente = async (req: Request, res: Response) => {
       return res.status(400).json({ mensaje: "La contraseña es obligatoria" });
     }
 
-    // Verificar si ya existe el email
     const existente = await repoUsuario.findOne({ where: { email } });
     if (existente) {
       return res.status(400).json({ mensaje: "El email ya está en uso" });
@@ -143,9 +190,19 @@ export const registroPaciente = async (req: Request, res: Response) => {
 
     const guardado = await repoUsuario.save(nuevo);
 
-    return res
-      .status(201)
-      .json({ mensaje: "Usuario paciente registrado", usuario: guardado });
+    // ✅ ENVIAR CORREO
+    await enviarCorreo(
+      guardado.email,
+      "Bienvenido a la Plataforma de Turnos",
+      `Hola ${guardado.nombre} ${guardado.apellido},\n\n¡Gracias por registrarte en nuestra plataforma de turnos! Ya podés comenzar a solicitar turnos.\n\n— Equipo IEPSI`
+    );
+
+    console.log("Correo de bienvenida enviado a:", guardado.email);
+
+    return res.status(201).json({
+      mensaje: "Usuario paciente registrado",
+      usuario: guardado,
+    });
   } catch (error) {
     console.error("Error al registrar paciente:", error);
     res.status(500).json({ mensaje: "Error en el registro" });
